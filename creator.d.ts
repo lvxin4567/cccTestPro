@@ -3928,6 +3928,118 @@ declare namespace cc {
 		*/
 		isPersistRootNode(node: Node): boolean;	
 	}	
+	export class eventManager {		
+		/**
+		!#en Pauses all listeners which are associated the specified target.
+		!#zh 暂停传入的 node 相关的所有监听器的事件响应。
+		@param node node
+		@param recursive recursive 
+		*/
+		static pauseTarget(node: Node, recursive?: boolean): void;		
+		/**
+		!#en Resumes all listeners which are associated the specified target.
+		!#zh 恢复传入的 node 相关的所有监听器的事件响应。
+		@param node node
+		@param recursive recursive 
+		*/
+		static resumeTarget(node: Node, recursive?: boolean): void;		
+		/**
+		!#en Query whether the specified event listener id has been added.
+		!#zh 查询指定的事件 ID 是否存在
+		@param listenerID The listener id. 
+		*/
+		static hasEventListener(listenerID: string|number): boolean;		
+		/**
+		!#en
+		<p>
+		Adds a event listener for a specified event.<br/>
+		if the parameter "nodeOrPriority" is a node,
+		it means to add a event listener for a specified event with the priority of scene graph.<br/>
+		if the parameter "nodeOrPriority" is a Number,
+		it means to add a event listener for a specified event with the fixed priority.<br/>
+		</p>
+		!#zh
+		将事件监听器添加到事件管理器中。<br/>
+		如果参数 “nodeOrPriority” 是节点，优先级由 node 的渲染顺序决定，显示在上层的节点将优先收到事件。<br/>
+		如果参数 “nodeOrPriority” 是数字，优先级则固定为该参数的数值，数字越小，优先级越高。<br/>
+		@param listener The listener of a specified event or a object of some event parameters.
+		@param nodeOrPriority The priority of the listener is based on the draw order of this node or fixedPriority The fixed priority of the listener. 
+		*/
+		static addListener(listener: EventListener|any, nodeOrPriority: Node|number): EventListener;		
+		/**
+		!#en Remove a listener.
+		!#zh 移除一个已添加的监听器。
+		@param listener an event listener or a registered node target
+		
+		@example 
+		```js
+		
+		// 1. remove eventManager add Listener;
+		var mouseListener1 = cc.eventManager.addListener({
+		    event: cc.EventListener.MOUSE,
+		    onMouseDown:  function(keyCode, event){ },
+		    onMouseUp: function(keyCode, event){ },
+		    onMouseMove: function () { },
+		    onMouseScroll: function () { }
+		}, node);
+		
+		cc.eventManager.removeListener(mouseListener1);
+		
+		// 2. remove eventListener create Listener;
+		var mouseListener2 = cc.EventListener.create({
+		    event: cc.EventListener.MOUSE,
+		    onMouseDown:  function(keyCode, event){ },
+		    onMouseUp: function(keyCode, event){ },
+		    onMouseMove: function () { },
+		    onMouseScroll: function () { }
+		});
+		
+		cc.eventManager.removeListener(mouseListener2);
+		
+		``` 
+		*/
+		static removeListener(listener: EventListener): void;		
+		/**
+		!#en Removes all listeners with the same event listener type or removes all listeners of a node.
+		!#zh
+		移除注册到 eventManager 中指定类型的所有事件监听器。<br/>
+		1. 如果传入的第一个参数类型是 Node，那么事件管理器将移除与该对象相关的所有事件监听器。
+		（如果第二参数 recursive 是 true 的话，就会连同该对象的子控件上所有的事件监听器也一并移除）<br/>
+		2. 如果传入的第一个参数类型是 Number（该类型 EventListener 中定义的事件类型），
+		那么事件管理器将移除该类型的所有事件监听器。<br/>
+		
+		下列是目前存在监听器类型：       <br/>
+		cc.EventListener.UNKNOWN       <br/>
+		cc.EventListener.KEYBOARD      <br/>
+		cc.EventListener.ACCELERATION，<br/>
+		@param listenerType listenerType or a node
+		@param recursive recursive 
+		*/
+		static removeListeners(listenerType: number|Node, recursive?: boolean): void;		
+		/**
+		!#en Removes all listeners
+		!#zh 移除所有事件监听器。 
+		*/
+		static removeAllListeners(): void;		
+		/**
+		!#en Sets listener's priority with fixed value.
+		!#zh 设置 FixedPriority 类型监听器的优先级。
+		@param listener listener
+		@param fixedPriority fixedPriority 
+		*/
+		static setPriority(listener: EventListener, fixedPriority: number): void;		
+		/**
+		!#en Whether to enable dispatching events
+		!#zh 启用或禁用事件管理器，禁用后不会分发任何事件。
+		@param enabled enabled 
+		*/
+		static setEnabled(enabled: boolean): void;		
+		/**
+		!#en Checks whether dispatching events is enabled
+		!#zh 检测事件管理器是否启用。 
+		*/
+		static isEnabled(): boolean;	
+	}	
 	/** !#en
 	Class of all entities in Cocos Creator scenes.<br/>
 	For events supported by Node, please refer to {{#crossLink "Node.EventType"}}{{/crossLink}}
@@ -8001,7 +8113,10 @@ declare namespace cc {
 	!#zh
 	事件目标是事件触发时，分派的事件对象，Node 是最常见的事件目标，
 	但是其他对象也可以是事件目标。<br/> */
-	export class EventTarget {		
+	export class EventTarget {
+        static addListener(_updateListener: any, arg1: number) {
+            throw new Error("Method not implemented.");
+        }		
 		/**
 		!#en Checks whether the EventTarget object has any callback registered for a specific type of event.
 		!#zh 检查事件目标对象是否有为特定类型的事件注册的回调。
@@ -25065,7 +25180,7 @@ declare namespace dragonBones {
     }
 }
 
-declare let jsb: any;
+// declare let jsb: any;
 /** Running in the editor. */
 declare let CC_EDITOR: boolean;
 /** Preview in browser or simulator. */
@@ -25084,3 +25199,143 @@ declare let CC_TEST: boolean;
 declare let CC_WECHATGAME: boolean;
 /** Running in the bricks. */
 declare let CC_QQPLAY: boolean;
+
+
+namespace jsb {
+	export var reflection:any;
+	export module fileUtils {
+
+		//文件夹操作
+		export function createDirectory(dir: string): boolean;
+		export function removeDirectory(dir: string): boolean;
+		export function isDirectoryExist(dir: string): boolean;
+		export function listFiles(dir: string): Array<string>;
+		export function listFilesRecursively(dirsOut: Array<string>): void;
+		export function getWritablePath(): string;
+
+
+		//文件操作
+		export function isAbsolutePath(file: string): boolean;
+		export function isFileExist(file: string): boolean;
+		export function getFileSize(file: string): number;
+		export function removeFile(file: string): boolean;
+		export function getFileExtension(file: string): string;
+		export function fullPathFromRelativeFile(filename: string, relativename: string): string;
+		export function fullPathForFilename(filename: string): string;
+		export function renameFile(oldfullpath: string, newfullpath: string): string;
+		export function renameFile(path: string, oldname: string, newname: string): string;
+
+		//文件读写
+		export function writeStringToFile(data: string, file: string): boolean;
+		export function getStringFromFile(file: string): string;
+
+		//cocos 操作
+		export function purgeCachedEntries(): void;
+		export function setDefaultResourceRootPath(dir: string): void;
+		export function addSearchPath(dir: string, front: boolean): void;
+		export function setSearchPaths(dirs: Array<string>): void;
+		export function getSearchPaths(): Array<string>;
+
+
+		export function addSearchResolutionsOrder(dir: string, front: boolean): void;
+		export function setSearchResolutionsOrder(dirs: Array<string>): void;
+		export function getSearchResolutionsOrder(): Array<string>;
+
+	}
+
+	export class EventListenerAssetsManager {
+
+		constructor(any: any, call: Function);
+
+	}
+
+
+	export class AssetsManager {
+		static State = {
+			UNINITED: number,
+			UNCHECKED: number,
+			PREDOWNLOAD_VERSION: number,
+			DOWNLOADING_VERSION: number,
+			VERSION_LOADED: number,
+			PREDOWNLOAD_MANIFEST: number,
+			DOWNLOADING_MANIFEST: number,
+			MANIFEST_LOADED: number,
+			NEED_UPDATE: number,
+			READY_TO_UPDATE: number,
+			UPDATING: number,
+			UNZIPPING: number,
+			UP_TO_DATE: number,
+			FAIL_TO_UPDATE: number
+		}
+		setEventCallback(func: Function);
+		getDownloadedFiles(): number;
+		getState(): number;
+		getMaxConcurrentTask(): number;
+		getTotalFiles(): number;
+		loadRemoteManifest(manifest: any): boolean;
+		checkUpdate();
+		getTotalBytes(): number;
+		setVerifyCallback(func: Function);
+		getStoragePath(): string;
+		update();
+		setVersionCompareHandle(func: Function);
+		setMaxConcurrentTask(n: number);
+		getDownloadedBytes(): number;
+		getLocalManifest(): any;
+		loadLocalManifest(manifest: string | any, str: string);
+		getRemoteManifest(): any;
+		prepareUpdate();
+		downloadFailedAssets();
+		isResuming(): boolean;
+		create(str: string, str2: string): any;
+		constructor(str: string, str2: string, func: Function);
+	}
+	export class EventAssetsManager {
+		static ERROR_NO_LOCAL_MANIFEST: number;
+		static ERROR_DOWNLOAD_MANIFEST: number;
+		static ERROR_PARSE_MANIFEST: number;
+		static NEW_VERSION_FOUND: number;
+		static ALREADY_UP_TO_DATE: number;
+		static UPDATE_PROGRESSION: number;
+		static ASSET_UPDATED: number;
+		static ERROR_UPDATING: number;
+		static UPDATE_FINISHED: number;
+		static UPDATE_FAILED: number;
+		static ERROR_DECOMPRESS: number;
+		getAssetsManagerEx(): any;
+		getDownloadedFiles(): number;
+		getTotalFiles(): number;
+		getAssetId(): string;
+		getTotalBytes(): number;
+		getDownloadedBytes(): number;
+		getCURLECode(): number;
+		getCURLMCode(): number;
+		getEventCode(): number;
+		getMessage(): string;
+		getPercentByFile(): number; // {float}
+		getPercent(): number;// {float}
+		isResuming(): boolean;
+		constructor(str, assetsmanagerex, eventcode, str, str, int, int)
+	}
+
+	export class Manifest {
+
+		getManifestRoot(): string;
+		setUpdating(): boolean;
+		getManifestFileUrl: string;
+		isVersionLoaded(): boolean;
+		parseFile(str: string): void;
+		isLoaded(): boolean;
+		getPackageUrl(): string;
+		isUpdating(): boolean;
+		getVersion(): string;
+		parseJSONString(arg0: string, arg1: string): void;
+		getVersionFileUrl(): string;
+		getSearchPaths(): Array<string>;
+		constructor(str: string, str1: string);
+	}
+
+ }
+
+
+ declare var window: Window & typeof globalThis;

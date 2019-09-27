@@ -12,9 +12,10 @@ var manifest = {
 };
 
 var dest = './remote-assets/';
-var src = './build/jsb-link/';
+var src = './build/jsb-link';
 
 // Parse arguments
+// console.log(process.argv)
 var i = 2;
 while (i < process.argv.length) {
     var arg = process.argv[i];
@@ -57,6 +58,7 @@ function readDir(dir, obj) {
     }
     var subpaths = fs.readdirSync(dir),
         subpath, size, md5, compressed, relative;
+
     for (var i = 0; i < subpaths.length; ++i) {
         if (subpaths[i][0] === '.') {
             continue;
@@ -85,6 +87,67 @@ function readDir(dir, obj) {
     }
 }
 
+var copyFolder = function (srcDir, tarDir, cb) {
+    fs.readdir(srcDir, function (err, files) {
+        var count = 0
+        var checkEnd = function () {
+            ++count == files.length && cb && cb()
+        }
+
+        if (err) {
+            checkEnd()
+            return
+        }
+
+        files.forEach(function (file) {
+            var srcPath = path.join(srcDir, file)
+            var tarPath = path.join(tarDir, file)
+
+            fs.stat(srcPath, function (err, stats) {
+                if (stats.isDirectory()) {
+                    console.log('mkdir', tarPath)
+                    fs.mkdir(tarPath, function (err) {
+                        if (err) {
+                            console.log(err)
+                            return
+                        }
+
+                        copyFolder(srcPath, tarPath, checkEnd)
+                    })
+                } else {
+                    copyFile(srcPath, tarPath, checkEnd)
+                }
+            })
+        })
+
+        //为空时直接回调
+        files.length === 0 && cb && cb()
+    })
+}
+
+var copyFile = function (srcPath, tarPath, cb) {
+    var rs = fs.createReadStream(srcPath)
+    rs.on('error', function (err) {
+        if (err) {
+            console.log('read error', srcPath)
+        }
+        cb && cb(err)
+    })
+
+    var ws = fs.createWriteStream(tarPath)
+    ws.on('error', function (err) {
+        if (err) {
+            console.log('write error', tarPath)
+        }
+        cb && cb(err)
+    })
+    ws.on('close', function (ex) {
+        cb && cb(ex)
+    })
+
+    rs.pipe(ws)
+}
+
 var mkdirSync = function (path) {
     try {
         fs.mkdirSync(path);
@@ -93,52 +156,22 @@ var mkdirSync = function (path) {
     }
 }
 
-const copyFile = function (srcPath, tarPath, filter = []) {
-    console.log('srcPath' , srcPath)
-    console.log('tarPath' , tarPath)
-    fs.readdir(srcPath, function (err, files) {
-        console.log(files)
-        if (err === null) {
-            files.forEach(function (filename) {
-                let filedir = path.join(srcPath, filename);
-                let filterFlag = filter.some(item => item === filename)
-                if (!filterFlag) {
-                    fs.stat(filedir, function (errs, stats) {
-                        let isFile = stats.isFile()
-                        if (isFile) { // 复制文件
-                            const destPath = path.join(tarPath, filename);
-                            fs.copyFile(filedir, destPath, (err) => {})
-                        } else { // 创建文件夹
-                            let tarFiledir = path.join(tarPath, filename);
-                            fs.mkdir(tarFiledir, (err) => {});
-                            copyFile(filedir, tarFiledir, filter) // 递归
-                        }
-                    })
-                }
-            })
-        } else {
-            if (err) console.error(err);
-        }
-    })
-}
-
-
 // Iterate res and src folder
-console.log(path.join(src, 'src'));
-var newPath = dest + "/" + manifest.version + "/";
-mkdirSync(newPath);
-
-//使用
-copyFile(src + "/res", newPath + "/res/");
-// copyFile(src + "/src", newPath + "/src/");
-
 readDir(path.join(src, 'src'), manifest.assets);
 readDir(path.join(src, 'res'), manifest.assets);
 
-var destManifest = path.join(newPath, 'project.manifest');
-var destVersion = path.join(newPath, 'version.manifest');
+var newOutDir = dest + "/" + manifest.version;
 
-mkdirSync(newPath);
+var destManifest = path.join(newOutDir, 'project.manifest');
+var destVersion = path.join(newOutDir, 'version.manifest');
+
+mkdirSync(newOutDir);
+mkdirSync(newOutDir + "/src");
+mkdirSync(newOutDir + "/res");
+
+console.log("复制文件夹", newOutDir);
+copyFolder(src + "/res", newOutDir + "/res");
+copyFolder(src + "/src", newOutDir + "/src");
 
 fs.writeFile(destManifest, JSON.stringify(manifest), (err) => {
     if (err) throw err;

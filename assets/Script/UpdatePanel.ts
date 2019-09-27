@@ -27,6 +27,8 @@ export default class UpdatePanel extends cc.Component {
     retryBtn: cc.Node = null;
     @property(cc.Node)
     updateBtn: cc.Node = null;
+    @property(cc.Label)
+    versionLabel:cc.Label = null;
 
     onLoad() {
         this.close.on(cc.Node.EventType.TOUCH_END, () => {

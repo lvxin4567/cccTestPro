@@ -8,11 +8,6 @@ export default class HotUpdate extends cc.Component {
     @property(UpdatePanel)
     panel: UpdatePanel = null;
 
-    manifestUrl: {
-        type: cc.Asset,     // use 'type:' to define Asset object directly
-        default: null,      // object's default value is null
-    }
-
     @property(cc.Node)
     updateUI: cc.Node = null;
 
@@ -21,44 +16,30 @@ export default class HotUpdate extends cc.Component {
 
     _storagePath: string = '';
 
-    versionCompareHandle: Function = null;
     _am = null;
     _checkListener = null;
     _updateListener = null;
     _failCount: number = 0;
+
+    @property(cc.Asset)
+    manifestUrl: cc.Asset = null;
 
     onLoad() {
         console.log(this.manifestUrl);
         if (!cc.sys.isNative) {
             return;
         }
-
-        this._storagePath = ((jsb.fileUtils ? jsb.fileUtils.getWritablePath() : '/') + 'blackjack-remote-asset');
+        this._storagePath = ((jsb.fileUtils ? jsb.fileUtils.getWritablePath() : '/') + 'remote-asset');
         console.log('Storage path for remote asset : ' + this._storagePath);
 
-        this.versionCompareHandle = function (versionA, versionB) {
-            console.log("JS Custom Version Compare: version A is " + versionA + ', version B is ' + versionB);
-            var vA = versionA.split('.');
-            var vB = versionB.split('.');
-            for (var i = 0; i < vA.length; ++i) {
-                var a = parseInt(vA[i]);
-                var b = parseInt(vB[i] || 0);
-                if (a === b) {
-                    continue;
-                }
-                else {
-                    return a - b;
-                }
-            }
-            if (vB.length > vA.length) {
-                return -1;
-            }
-            else {
-                return 0;
-            }
-        };
+        var projectpath = this._storagePath + "/project.manifest";
+        if (jsb.fileUtils.isFileExist(projectpath)) {
+            let data = JSON.parse(jsb.fileUtils.getStringFromFile(projectpath));
+            console.log(JSON.stringify(data));
+            this.panel.versionLabel.string = data['version'];
+        }
 
-        this._am = new jsb.AssetsManager('', this._storagePath, this.versionCompareHandle);
+        this._am = new jsb.AssetsManager('', this._storagePath, this.versionCompareHandle);//此时会创建temp目录
         var panel = this.panel;
         this._am.setVerifyCallback(function (path, asset) {
             // When asset is compressed, we don't need to check its md5, because zip file have been deleted.
@@ -89,7 +70,30 @@ export default class HotUpdate extends cc.Component {
         }
         this.panel.fileProgress.progress = 0;
         this.panel.byteProgress.progress = 0;
+    };
+
+    versionCompareHandle(versionA, versionB) {
+        console.log("JS Custom Version Compare: version A is " + versionA + ', version B is ' + versionB);
+        var vA = versionA.split('.');
+        var vB = versionB.split('.');
+        for (var i = 0; i < vA.length; ++i) {
+            var a = parseInt(vA[i]);
+            var b = parseInt(vB[i] || 0);
+            if (a === b) {
+                continue;
+            }
+            else {
+                return a - b;
+            }
+        }
+        if (vB.length > vA.length) {
+            return -1;
+        }
+        else {
+            return 0;
+        }
     }
+
 
     checkCb(event) {
         console.log('Code: ' + event.getEventCode());
@@ -195,6 +199,7 @@ export default class HotUpdate extends cc.Component {
     }
 
     // loadCustomManifest() {
+    //     console.log("loadCustomManifest");
     //     if (this._am.getState() === jsb.AssetsManager.State.UNINITED) {
     //         var manifest = new jsb.Manifest(customManifestStr, this._storagePath);
     //         this._am.loadLocalManifest(manifest, this._storagePath);
@@ -218,12 +223,12 @@ export default class HotUpdate extends cc.Component {
             return;
         }
         if (this._am.getState() === jsb.AssetsManager.State.UNINITED) {//
-            // // Resolve md5 url
-            // var url = this.manifestUrl.nativeUrl;
-            // console.log('url' , url);
-            // if (cc.loader.md5Pipe) {
-            //     url = cc.loader.md5Pipe.transformURL(url);
-            // }
+            // Resolve md5 url
+            var url = this.manifestUrl;
+            console.log('url', url);
+            if (cc.loader.md5Pipe) {
+                url = cc.loader.md5Pipe.transformURL(url);
+            }
             this._am.loadLocalManifest(this.manifestUrl);
         }
         if (!this._am.getLocalManifest() || !this._am.getLocalManifest().isLoaded()) {
@@ -240,20 +245,13 @@ export default class HotUpdate extends cc.Component {
         if (this._am && !this._updating) {
             this._am.setEventCallback(this.updateCb.bind(this));
 
-            // if (this._am.getState() === jsb.AssetsManager.State.UNINITED) {
-            //     // Resolve md5 url
-            //     var url = this.manifestUrl.nativeUrl;
-            //     if (cc.loader.md5Pipe) {
-            //         url = cc.loader.md5Pipe.transformURL(url);
-            //     }
-            //     this._am.loadLocalManifest(url);
-            // }
-
-
-            this._updateListener = new jsb.EventListenerAssetsManager(this._am, this.updateCb.bind(this))
-            cc.eventManager.addListener(this._updateListener, 1)
             if (this._am.getState() === jsb.AssetsManager.State.UNINITED) {
-                this._am.loadLocalManifest(this.manifestUrl)
+                // Resolve md5 url
+                var url = this.manifestUrl;
+                if (cc.loader.md5Pipe) {
+                    url = cc.loader.md5Pipe.transformURL(url);
+                }
+                this._am.loadLocalManifest(url);
             }
 
             this._failCount = 0;
