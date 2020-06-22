@@ -35,9 +35,4 @@ export default class UpdatePanel extends cc.Component {
             this.node.parent.active = false;
         })
     }
-
-
-
-
-
 }

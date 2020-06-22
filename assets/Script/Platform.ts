@@ -1,3 +1,4 @@
+
 export default class PlatformMgr {
 
     private batteryLevel: number = 0;
@@ -5,7 +6,6 @@ export default class PlatformMgr {
     static __Ins__: PlatformMgr = null;
     static getInstance() :PlatformMgr{
         if (PlatformMgr.__Ins__ == null) {
-            console.log("创建单例")
             PlatformMgr.__Ins__ = new PlatformMgr();
         }
         return PlatformMgr.__Ins__;
@@ -27,7 +27,4 @@ export default class PlatformMgr {
         console.log("传出的电量",this.batteryLevel);
         return this.batteryLevel;
     }
-
-
-
 }

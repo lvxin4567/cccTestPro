@@ -1,4 +1,3 @@
-import Platform from "./Platform";
 import PlatformMgr from "./Platform";
 
 const { ccclass, property } = cc._decorator;
@@ -70,13 +69,13 @@ export default class Helloworld extends cc.Component {
                 var batteryLevel = cc.sys.getBatteryLevel();
                 console.log(index++, batteryLevel);
 
-                jsb.reflection.callStaticMethod("org/cocos2dx/javascript/Test", "setBatteryLevel", "(I)V", Math.floor(batteryLevel*100));
-
+                jsb.reflection.callStaticMethod("org/cocos2dx/javascript/Test", "setBatteryLevel", "(I)V", Math.floor(batteryLevel * 100));
+                
                 let receiveLevel = PlatformMgr.getInstance().getBatteryLevel();
                 this.batteryLabel.string = "电量:" + receiveLevel;
 
-                var netWork = cc.sys.getNetworkType();
-                console.log(index++, netWork);
+                // var netWork = cc.sys.getNetworkType();
+                // console.log(index++, netWork);
             }
         }
     }
