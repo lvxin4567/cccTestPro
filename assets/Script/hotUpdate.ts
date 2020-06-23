@@ -25,7 +25,7 @@ export default class HotUpdate extends cc.Component {
     manifestUrl: cc.Asset = null;
 
     onLoad() {
-        console.log(this.manifestUrl);
+        console.log("this.manifestUrl" , this.manifestUrl);
         if (!cc.sys.isNative) {
             return;
         }
@@ -96,7 +96,7 @@ export default class HotUpdate extends cc.Component {
 
 
     checkCb(event) {
-        console.log('Code: ' + event.getEventCode());
+        console.log('checkCb Code: ' + event.getEventCode());
         switch (event.getEventCode()) {
             case jsb.EventAssetsManager.ERROR_NO_LOCAL_MANIFEST:
                 this.panel.info.string = "No local manifest file found, hot update skipped.";
@@ -126,6 +126,7 @@ export default class HotUpdate extends cc.Component {
     updateCb(event) {
         var needRestart = false;
         var failed = false;
+        console.log("event.getEventCode()", event.getEventCode());
         switch (event.getEventCode()) {
             case jsb.EventAssetsManager.ERROR_NO_LOCAL_MANIFEST:
                 this.panel.info.string = 'No local manifest file found, hot update skipped.';
@@ -222,6 +223,7 @@ export default class HotUpdate extends cc.Component {
             this.panel.info.string = 'Checking or updating ...';
             return;
         }
+        console.log("this._am.getState()" , this._am.getState());
         if (this._am.getState() === jsb.AssetsManager.State.UNINITED) {//
             // Resolve md5 url
             var url = this.manifestUrl;
@@ -232,6 +234,7 @@ export default class HotUpdate extends cc.Component {
             this._am.loadLocalManifest(this.manifestUrl);
         }
         if (!this._am.getLocalManifest() || !this._am.getLocalManifest().isLoaded()) {
+            console.log("Failed to load local manifest ...")
             this.panel.info.string = 'Failed to load local manifest ...';
             return;
         }
@@ -244,7 +247,6 @@ export default class HotUpdate extends cc.Component {
     hotUpdate() {
         if (this._am && !this._updating) {
             this._am.setEventCallback(this.updateCb.bind(this));
-
             if (this._am.getState() === jsb.AssetsManager.State.UNINITED) {
                 // Resolve md5 url
                 var url = this.manifestUrl;
